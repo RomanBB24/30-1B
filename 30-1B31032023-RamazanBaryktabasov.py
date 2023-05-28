@@ -1,36 +1,75 @@
-def bubble_sort(arr):
-    n = len(arr)
-    for i in range(n - 1):
-        for j in range(n - 1 - i):
-            if arr[j] > arr[j + 1]:
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]
-    return arr
+import sqlite3
 
 
-def binary_search(element, arr):
-    low = 0
-    high = len(arr) - 1
-    while low <= high:
-        mid = (low + high) // 2
-        if arr[mid] == element:
-            return mid
-        elif arr[mid] < element:
-            low = mid + 1
-        else:
-            high = mid - 1
-    return -1
+conn = sqlite3.connect('hw.db')
+cursor = conn.cursor()
 
 
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_title TEXT NOT NULL,
+        price NUMERIC(10, 2) NOT NULL DEFAULT 0.0,
+        quantity INTEGER NOT NULL DEFAULT 0
+    )
+''')
+conn.commit()
 
-unsorted_list = [5, 2, 9, 1, 7]
-sorted_list = bubble_sort(unsorted_list)
-print("Отсортированный список:", sorted_list)
 
-element_to_find = 2
-index = binary_search(element_to_find, sorted_list)
-if index != -1:
-    print(f"Элемент {element_to_find} найден на позиции {index}")
-else:
-    print(f"Элемент {element_to_find} не найден в списке")
+def add_products():
+    products = [
+        ('Товар 1', 9.99, 5),
+        ('Товар 2', 19.99, 10),
+        ('Товар 3', 29.99, 2),
+
+    ]
+    cursor.executemany('INSERT INTO products (product_title, price, quantity) VALUES (?, ?, ?)', products)
+    conn.commit()
+
+def change_quantity(product_id, new_quantity):
+    cursor.execute('UPDATE products SET quantity = ? WHERE id = ?', (new_quantity, product_id))
+    conn.commit()
+
+def change_price(product_id, new_price):
+    cursor.execute('UPDATE products SET price = ? WHERE id = ?', (new_price, product_id))
+    conn.commit()
+
+
+def delete_product(product_id):
+    cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+    conn.commit()
+
+
+def select_all_products():
+    cursor.execute('SELECT * FROM products')
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+
+def select_products_less_than_100_and_quantity_greater_than_5():
+    cursor.execute('SELECT * FROM products WHERE price < 100.0 AND quantity > 5')
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+
+def search_products_by_title(keyword):
+    cursor.execute('SELECT * FROM products WHERE product_title LIKE ?', ('%{}%'.format(keyword),))
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+
+add_products()
+change_quantity(1, 3)
+change_price(2, 39.99)
+delete_product(3)
+select_all_products()
+select_products_less_than_100_and_quantity_greater_than_5()
+search_products_by_title('мыло')
+
+
+conn.close()
 
         
